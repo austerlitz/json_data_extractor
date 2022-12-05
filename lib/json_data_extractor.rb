@@ -1,6 +1,22 @@
-require "json_data_extractor/version"
+require "src/version"
+require "src/node"
 
-module JsonDataExtractor
-  class Error < StandardError; end
-  # Your code goes here...
+class JsonDataExtractor
+  def initialize(config )
+    @config = config
+  end
+
+  def parse(json)
+    schemas = config.fetch('schemas', {})
+    # binding.pry
+    {}.tap do |hash|
+      schemas.map do |key, val|
+        value = JsonPath.on(json, Node.new(val).path)
+        hash[key] = value if value
+      end
+    end
+  end
+
+  private
+  attr_reader :config
 end

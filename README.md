@@ -1,8 +1,11 @@
 # JsonDataExtractor
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/json_data_extractor`. To experiment with that code, run `bin/console` for an interactive prompt.
+Another try to make something for JSON that is XSLT for XML. 
+We transform one JSON into another JSON with the help of a third JSON!!!111!!elevent!!
 
-TODO: Delete this and the text above, and describe your gem
+Remap one JSON structure into another with some basic rules and [jsonpath](https://github.com/joshbuddy/jsonpath).
+
+Heavily inspired by [xml_data_extractor](https://github.com/monde-sistemas/xml_data_extractor).
 
 ## Installation
 
@@ -22,8 +25,76 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+Assuming you are familiar with [JSONPath](https://goessner.net/articles/JsonPath/), you can write simple mappers that will remap incoming data into the structure you need.
 
+With the following source:
+
+```json
+{
+  "store": {
+    "book": [
+      {
+        "category": "reference",
+        "author": "Nigel Rees",
+        "title": "Sayings of the Century",
+        "price": 8.95
+      },
+      {
+        "category": "fiction",
+        "author": "Evelyn Waugh",
+        "title": "Sword of Honour",
+        "price": 12.99
+      },
+      {
+        "category": "fiction",
+        "author": "Herman Melville",
+        "title": "Moby Dick",
+        "isbn": "0-553-21311-3",
+        "price": 8.99
+      },
+      {
+        "category": "fiction",
+        "author": "J. R. R. Tolkien",
+        "title": "The Lord of the Rings",
+        "isbn": "0-395-19395-8",
+        "price": 22.99
+      }
+    ],
+    "bicycle": {
+      "color": "red",
+      "price": 19.95
+    }
+  }
+}
+```
+
+and the following schema:
+
+```yaml
+schemas:
+  authors:
+    path: $.store.book[*].author
+    modifier: downcase
+  categories: $..category
+```
+The resulting json will be:
+```json
+{
+  "authors": [
+    "Nigel Rees",
+    "Evelyn Waugh",
+    "Herman Melville",
+    "J. R. R. Tolkien"
+  ],
+  "categories": [
+    "reference",
+    "fiction",
+    "fiction",
+    "fiction"
+  ]
+}
+
+```
 ## Development
 
 After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
