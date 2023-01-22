@@ -57,7 +57,7 @@ RSpec.describe JsonDataExtractor do
 
   let!(:expected_result) do
     {
-      "authors":    ["Nigel Rees", "Evelyn Waugh", "Herman Melville", "J. R. R. Tolkien"],
+      "authors":    ["nigel rees", "evelyn waugh", "herman melville", "j. r. r. tolkien"],
       "categories": ["reference", "fiction", "fiction", "fiction"]
     }
   end

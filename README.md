@@ -81,10 +81,10 @@ The resulting json will be:
 ```json
 {
   "authors": [
-    "Nigel Rees",
-    "Evelyn Waugh",
-    "Herman Melville",
-    "J. R. R. Tolkien"
+    "nigel rees",
+    "evelyn waugh",
+    "herman melville",
+    "j. r. r. tolkien"
   ],
   "categories": [
     "reference",
