@@ -95,6 +95,14 @@ The resulting json will be:
 }
 
 ```
+
+Modifiers can be supplied on object creation and/or added later by calling `#add_modifier` method.  Please see specs for examples.
+
+## TODO
+
+Update this readme for better usage cases. 
+
+
 ## Development
 
 After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
