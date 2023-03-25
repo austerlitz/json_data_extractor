@@ -39,8 +39,8 @@ class JsonDataExtractor
     data.map do |value|
       modified_value = value
       modifiers.each do |modifier|
-        if @modifiers.key?(modifier)
-          modified_value = @modifiers[modifier].call(modified_value)
+        if @modifiers.key?(modifier.to_sym)
+          modified_value = @modifiers[modifier.to_sym].call(modified_value)
         else
           modified_value = apply_single_modifier(modifier, modified_value)
         end
