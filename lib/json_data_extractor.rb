@@ -1,4 +1,5 @@
-require "src/version"
+require 'src/version'
+require 'jsonpath'
 
 class JsonDataExtractor
   attr_reader :data, :modifiers
@@ -23,14 +24,13 @@ class JsonDataExtractor
         path       = val[:path]
         modifiers  = Array(val[:modifiers] || val[:modifier]).map(&:to_sym)
         array_type = 'array' == val[:type]
-        nested     = val.delete(:schema)
+        nested     = val.dup.delete(:schema)
       else
         path      = val
         modifiers = []
       end
 
-      json_path      = JsonPath.new(path)
-      extracted_data = json_path.on(@data)
+      extracted_data = JsonPath.on(@data, path)
 
       if extracted_data.empty?
         results[key] = nil
