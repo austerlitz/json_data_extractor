@@ -1,7 +1,11 @@
 # JsonDataExtractor
 
-Another try to make something for JSON that is XSLT for XML. 
-We transform one JSON into another JSON with the help of a third JSON!!!111!!eleventy!!
+Transform JSON data structures with the help of a simple schema and JsonPath expressions.
+Use the JsonDataExtractor gem to extract and modify data from complex JSON structures using a straightforward syntax
+and a range of built-in or custom modifiers.
+
+_Another try to make something for JSON that is XSLT for XML. 
+We transform one JSON into another JSON with the help of a third JSON!!!111!!eleventy!!_
 
 Remap one JSON structure into another with some basic rules and [jsonpath](https://github.com/joshbuddy/jsonpath).
 
@@ -25,9 +29,9 @@ Or install it yourself as:
 
 ## Usage
 
-Assuming you are familiar with [JSONPath](https://goessner.net/articles/JsonPath/), you can write simple mappers that will remap incoming data into the structure you need.
+JsonDataExtractor allows you to remap one JSON structure into another with some basic rules and [JSONPath](https://goessner.net/articles/JsonPath/) expressions. The process involves defining a schema that maps the input JSON structure to the desired output structure.
 
-With the following source:
+We'll base our examples on the following source:
 
 ```json
 {
@@ -68,7 +72,13 @@ With the following source:
 }
 ```
 
-and the following schema:
+### Defining a Schema
+
+A schema is defined using YAML syntax and consists of one or more mappings that specify how to extract data from the input JSON and where to place it in the output JSON.
+
+Each mapping has a path field that specifies the JsonPath expression to use for data extraction, and an optional modifier field that specifies one or more modifiers to apply to the extracted data. Modifiers are used to transform the data in some way before placing it in the output JSON.
+
+Here's an example schema that extracts the authors and categories from a JSON structure similar to the one used in the previous example:
 
 ```yaml
 schemas:
@@ -100,7 +110,7 @@ Modifiers can be supplied on object creation and/or added later by calling `#add
 
 ## TODO
 
-Update this readme for better usage cases. 
+Update this readme for better usage cases. Add info on arrays and modifiers.
 
 
 ## Development
