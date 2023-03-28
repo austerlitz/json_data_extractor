@@ -55,14 +55,13 @@ RSpec.describe JsonDataExtractor do
 
   let!(:expected_result) do
     {
-      "authors":    ["nigel rees", "evelyn waugh", "herman melville", "j. r. r. tolkien"],
-      "categories": ["reference", "fiction", "fiction", "fiction"]
+      "authors"    => ["nigel rees", "evelyn waugh", "herman melville", "j. r. r. tolkien"],
+      "categories" => ["reference", "fiction", "fiction", "fiction"]
     }
   end
 
-  it 'does the thing' do
-    puts JSON.pretty_generate(subject)
-    expect(JSON.pretty_generate(subject)).to eq JSON.pretty_generate(expected_result)
+  it 'extracts values according to jsonpath and applies modifiers if present' do
+    is_expected.to eq expected_result
   end
 
   context 'with multiple modifiers' do
@@ -76,27 +75,75 @@ RSpec.describe JsonDataExtractor do
     end
     let!(:expected_result) do
       {
-        "authors": ["nigel!rees", "evelyn!waugh", "herman!melville", "j.!r.!r.!tolkien"],
+        "authors" => ["nigel!rees", "evelyn!waugh", "herman!melville", "j.!r.!r.!tolkien"],
       }
     end
     subject { described_class.new(json, spaces_to_exclams: ->(item) { item.gsub(' ', '!') }).extract(config) }
-    it 'does the thing' do
-      puts JSON.pretty_generate(subject)
-      expect(JSON.pretty_generate(subject)).to eq JSON.pretty_generate(expected_result)
+    it 'applies modifiers in order of appearance' do
+      is_expected.to eq expected_result
     end
   end
 
   context 'returns scalars by default' do
     let(:yml) { 'first_item_price: $.store.book[0].price' }
-    let(:expected_result) { { "first_item_price": 8.95 } }
-    it 'does the thing' do
-      puts JSON.pretty_generate(subject)
-      expect(JSON.pretty_generate(subject)).to eq JSON.pretty_generate(expected_result)
+    let(:expected_result) { { "first_item_price" => 8.95 } }
+    it { is_expected.to eq expected_result }
+
+    context 'returns arrays if specifically ordered to' do
+      let(:yml) do
+        <<~YAML
+          first_item_price: 
+            path: $.store.book[0].price
+            type: array
+        YAML
+      end
+      let(:expected_result) { { "first_item_price" => [8.95] } }
+      it { is_expected.to eq expected_result }
     end
   end
 
   it "has a version number" do
     expect(JsonDataExtractor::VERSION).not_to be nil
+  end
+
+  context 'more examples' do
+    let(:data) do
+      {
+        "employees": [
+                       {
+                         "name":   "John Doe",
+                         "email":  "john.doe@example.com",
+                         "skills": ["Ruby", "JavaScript"]
+                       },
+                       {
+                         "name":   "Jane Doe",
+                         "email":  "jane.doe@example.com",
+                         "skills": ["Python", "SQL"]
+                       }
+                     ]
+      }.to_json
+    end
+    let(:schema) do
+      {
+        "names":           "$..name",
+        "lowercase_names": {
+          "path":     "$..name",
+          "modifier": :downcase
+        },
+        "usernames":       {
+          "path":      "$..email",
+          "modifiers": [:username]
+        }
+      }
+    end
+    subject { described_class.new(data) }
+    it 'works' do
+      subject.add_modifier(:username) { |value| value.split('@').first }
+      ap subject.extract(schema)
+    end
+    it 'is great' do
+      ap subject.extract("employee_skills": "$..skills")
+    end
   end
 
 end
