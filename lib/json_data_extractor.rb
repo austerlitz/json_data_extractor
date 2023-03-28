@@ -1,31 +1,41 @@
 require "src/version"
 
 class JsonDataExtractor
-  attr_reader :json_data, :modifiers
+  attr_reader :data, :modifiers
 
   def initialize(json_data, modifiers = {})
-    @json_data = json_data
-    @modifiers = modifiers
+    @data      = json_data
+    @modifiers = modifiers.transform_keys(&:to_sym) # todo address this later
   end
 
+  # @param modifier_name [String, Symbol]
   def add_modifier(modifier_name, &block)
+    modifier_name            = modifier_name.to_sym unless modifier_name.is_a?(Symbol)
     modifiers[modifier_name] = block
   end
 
+  # @param schema [Hash] schema of the expected data mapping
   def extract(schema)
     results = {}
     schema.each do |key, val|
-      path = val.is_a?(Hash) && val['path'] ? val['path'] : val
-      modifiers = val.is_a?(Hash) ? Array(val['modifiers'] || val['modifier']) : []
+      if val.is_a?(Hash)
+        val.transform_keys!(&:to_sym)
+        path       = val[:path]
+        modifiers  = Array(val[:modifiers] || val[:modifier]).map(&:to_sym)
+        array_type = 'array' == val[:type]
+      else
+        path      = val
+        modifiers = []
+      end
 
-      json_path = JsonPath.new(path)
-      extracted_data = json_path.on(@json_data).flatten.compact
+      json_path      = JsonPath.new(path)
+      extracted_data = json_path.on(@data)
 
       if extracted_data.empty?
         results[key] = nil
       else
         results[key] = apply_modifiers(extracted_data, modifiers)
-        unless val.is_a?(Hash) && val['type'] && 'array' == val['type']
+        unless array_type
           results[key] = results[key].first unless 1 < results[key].size
         end
       end
@@ -39,11 +49,7 @@ class JsonDataExtractor
     data.map do |value|
       modified_value = value
       modifiers.each do |modifier|
-        if @modifiers.key?(modifier.to_sym)
-          modified_value = @modifiers[modifier.to_sym].call(modified_value)
-        else
-          modified_value = apply_single_modifier(modifier, modified_value)
-        end
+        modified_value = apply_single_modifier(modifier, modified_value)
       end
       modified_value
     end
