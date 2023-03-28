@@ -1,5 +1,7 @@
 # JsonDataExtractor
 
+NOTE: This is still a very early beta.
+
 Transform JSON data structures with the help of a simple schema and JsonPath expressions.
 Use the JsonDataExtractor gem to extract and modify data from complex JSON structures using a straightforward syntax
 and a range of built-in or custom modifiers.
