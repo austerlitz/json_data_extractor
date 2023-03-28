@@ -23,6 +23,7 @@ class JsonDataExtractor
         path       = val[:path]
         modifiers  = Array(val[:modifiers] || val[:modifier]).map(&:to_sym)
         array_type = 'array' == val[:type]
+        nested     = val.delete(:schema)
       else
         path      = val
         modifiers = []
@@ -35,8 +36,15 @@ class JsonDataExtractor
         results[key] = nil
       else
         results[key] = apply_modifiers(extracted_data, modifiers)
-        unless array_type
+
+        # TODO yeah, this looks ugly. Address it later.
+        if !array_type
           results[key] = results[key].first unless 1 < results[key].size
+        elsif nested
+          results[key] = []
+          Array(extracted_data).each do |item|
+            results[key] << self.class.new(item).extract(nested)
+          end
         end
       end
     end
