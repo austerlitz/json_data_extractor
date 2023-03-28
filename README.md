@@ -74,11 +74,11 @@ We'll base our examples on the following source:
 
 ### Defining a Schema
 
-A schema is defined using YAML syntax and consists of one or more mappings that specify how to extract data from the input JSON and where to place it in the output JSON.
+A schema consists of one or more mappings that specify how to extract data from the input JSON and where to place it in the output JSON.
 
 Each mapping has a path field that specifies the JsonPath expression to use for data extraction, and an optional modifier field that specifies one or more modifiers to apply to the extracted data. Modifiers are used to transform the data in some way before placing it in the output JSON.
 
-Here's an example schema that extracts the authors and categories from a JSON structure similar to the one used in the previous example:
+Here's an example schema that extracts the authors and categories from a JSON structure similar to the one used in the previous example (here it's in YAML just for readability):
 
 ```yaml
 schemas:
