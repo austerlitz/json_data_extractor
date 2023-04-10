@@ -156,4 +156,45 @@ RSpec.describe JsonDataExtractor do
       is_expected.to eq expected_result
     end
   end
+
+  describe 'nested modifiers' do
+    let(:json) do
+      {
+        "employees": [
+                       {
+                         "name":   "John Doe",
+                         "email":  "john.doe@example.com",
+                         "skills": ["Ruby", "JavaScript"]
+                       },
+                       {
+                         "name":   "Jane Doe",
+                         "email":  "jane.doe@example.com",
+                         "skills": ["Python", "SQL"]
+                       }
+                     ]
+      }
+    end
+    let(:schema) do
+      {
+        langs: {
+          path: '$.employees[*]',
+          type: 'array',
+          schema: {
+            skills: {
+              path: '$.skills[*]',
+              modifier: :append
+            }
+          }
+        }
+
+
+      }
+    end
+    subject { described_class.new(json) }
+    it 'works' do
+
+      subject.add_modifier(:append) { |value| value + '...' }
+      ap subject.extract(schema)
+    end
+  end
 end

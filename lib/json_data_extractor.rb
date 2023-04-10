@@ -43,7 +43,7 @@ class JsonDataExtractor
         elsif nested
           results[key] = []
           Array(extracted_data).each do |item|
-            results[key] << self.class.new(item).extract(nested)
+            results[key] << self.class.new(item, @modifiers).extract(nested)
           end
         end
       end
