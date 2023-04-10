@@ -146,4 +146,14 @@ RSpec.describe JsonDataExtractor do
     end
   end
 
+  context 'when a ruby Hash is provided in input' do
+    let(:json) {
+      {name: 'John', email: 'doe@example.org'}
+    }
+    let(:yml) { 'email: $.email' }
+    let(:expected_result) { { 'email' => 'doe@example.org' }}
+    it 'converts Hash input objects to json' do
+      is_expected.to eq expected_result
+    end
+  end
 end

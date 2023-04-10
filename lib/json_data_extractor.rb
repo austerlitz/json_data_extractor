@@ -5,7 +5,7 @@ class JsonDataExtractor
   attr_reader :data, :modifiers
 
   def initialize(json_data, modifiers = {})
-    @data      = json_data
+    @data      = json_data.is_a?(Hash) ? json_data.to_json : json_data # hopefully it's a string; maybe we'll add some validation here
     @modifiers = modifiers.transform_keys(&:to_sym) # todo address this later
   end
 
