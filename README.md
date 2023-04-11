@@ -127,16 +127,16 @@ E.g. this is a valid real-life schema with nested data:
 
 ```json
 {
-  name:      '$.Name',
-  code:      '$.Code',
-  services:  '$.Services[*].Code',
-  locations: {
-    path:   '$.Locations[*]',
-    type:   'array',
-    schema: {
-      name: '$.Name',
-      type: '$.Type',
-      code: '$.Code'
+  "name":      "$.Name",
+  "code":      "$.Code",
+  "services":  "$.Services[*].Code",
+  "locations": {
+    "path":   "$.Locations[*]",
+    "type":   "array",
+    "schema": {
+      "name": "$.Name",
+      "type": "$.Type",
+      "code": "$.Code"
     }
   }
 }
