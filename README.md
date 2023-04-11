@@ -125,7 +125,7 @@ JDE supports nested schemas. Just provide your element with a type of `array` an
 
 E.g. this is a valid real-life schema with nested data:
 
-```ruby
+```json
 {
   name:      '$.Name',
   code:      '$.Code',
