@@ -164,12 +164,20 @@ RSpec.describe JsonDataExtractor do
                        {
                          "name":   "John Doe",
                          "email":  "john.doe@example.com",
-                         "skills": ["Ruby", "JavaScript"]
+                         "skills": ["Ruby", "JavaScript"],
+                         "car": {
+                           "make": "Ford",
+                           "model": "Focus",
+                         }
                        },
                        {
                          "name":   "Jane Doe",
                          "email":  "jane.doe@example.com",
-                         "skills": ["Python", "SQL"]
+                         "skills": ["Python", "SQL"],
+                         "car": {
+                           "make": "BMW",
+                           "model": "X5",
+                         }
                        }
                      ]
       }
@@ -195,6 +203,30 @@ RSpec.describe JsonDataExtractor do
 
       subject.add_modifier(:append) { |value| value + '...' }
       ap subject.extract(schema)
+    end
+    context 'nested modifiers for non-array type' do
+
+    let(:schema) do
+      {
+        cars: {
+          path: '$.employees[*]',
+          type: 'array',
+          schema: {
+            name: '$.name',
+            car: {
+              path: '$.car',
+              schema: {
+                brand: '$.make'
+              }
+            }
+          }
+        }
+      }
+    end
+    it 'works' do
+
+      ap subject.extract(schema)
+    end
     end
   end
 end

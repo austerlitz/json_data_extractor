@@ -39,7 +39,13 @@ class JsonDataExtractor
 
         # TODO yeah, this looks ugly. Address it later.
         if !array_type
-          results[key] = results[key].first unless 1 < results[key].size
+          if nested
+            results[key] = self.class.new(results[key].first, @modifiers).extract(nested)
+            # todo there might be a problem if results[key] yields more than 1 item
+            # Yeah, we'll get back to it later. Or send your PRs
+          else
+            results[key] = results[key].first unless 1 < results[key].size
+          end
         elsif nested
           results[key] = []
           Array(extracted_data).each do |item|
