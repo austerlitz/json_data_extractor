@@ -148,10 +148,10 @@ RSpec.describe JsonDataExtractor do
 
   context 'when a ruby Hash is provided in input' do
     let(:json) {
-      {name: 'John', email: 'doe@example.org'}
+      { name: 'John', email: 'doe@example.org' }
     }
     let(:yml) { 'email: $.email' }
-    let(:expected_result) { { 'email' => 'doe@example.org' }}
+    let(:expected_result) { { 'email' => 'doe@example.org' } }
     it 'converts Hash input objects to json' do
       is_expected.to eq expected_result
     end
@@ -165,8 +165,8 @@ RSpec.describe JsonDataExtractor do
                          "name":   "John Doe",
                          "email":  "john.doe@example.com",
                          "skills": ["Ruby", "JavaScript"],
-                         "car": {
-                           "make": "Ford",
+                         "car":    {
+                           "make":  "Ford",
                            "model": "Focus",
                          }
                        },
@@ -174,8 +174,8 @@ RSpec.describe JsonDataExtractor do
                          "name":   "Jane Doe",
                          "email":  "jane.doe@example.com",
                          "skills": ["Python", "SQL"],
-                         "car": {
-                           "make": "BMW",
+                         "car":    {
+                           "make":  "BMW",
                            "model": "X5",
                          }
                        }
@@ -185,48 +185,97 @@ RSpec.describe JsonDataExtractor do
     let(:schema) do
       {
         langs: {
-          path: '$.employees[*]',
-          type: 'array',
+          path:   '$.employees[*]',
+          type:   'array',
           schema: {
             skills: {
-              path: '$.skills[*]',
+              path:     '$.skills[*]',
               modifier: :append
             }
           }
         }
 
-
       }
     end
     subject { described_class.new(json) }
-    it 'works' do
+    it 'works with arrays' do
 
       subject.add_modifier(:append) { |value| value + '...' }
       ap subject.extract(schema)
+      json = {"langs":[{"skills":["Ruby...","JavaScript..."]},{"skills":["Python...","SQL..."]}]}
+      expect(subject.extract(schema)).to eq(json)
     end
     context 'nested modifiers for non-array type' do
 
-    let(:schema) do
-      {
-        cars: {
-          path: '$.employees[*]',
-          type: 'array',
-          schema: {
-            name: '$.name',
-            car: {
-              path: '$.car',
-              schema: {
-                brand: '$.make'
+      let(:schema) do
+        {
+          cars: {
+            path:   '$.employees[*]',
+            type:   'array',
+            schema: {
+              name: '$.name',
+              car:  {
+                path:   '$.car',
+                schema: {
+                  brand: '$.make'
+                }
               }
             }
           }
         }
-      }
-    end
-    it 'works' do
+      end
+      it 'works with scalars' do
 
-      ap subject.extract(schema)
+        ap subject.extract(schema)
+        puts subject.extract(schema).to_json
+        json = { "cars": [{ "name": "John Doe", "car": { "brand": "Ford" } }, { "name": "Jane Doe", "car": { "brand": "BMW" } }] }
+        expect(subject.extract(schema)).to eq(json)
+      end
     end
+  end
+
+  #########
+  describe '#initialize' do
+    context 'when given a JSON string' do
+      it 'stores the string as data' do
+        json_string = '{"name": "Alice", "age": 25}'
+        extractor   = JsonDataExtractor.new(json_string)
+        expect(extractor.data).to eq(json_string)
+      end
+    end
+
+    context 'when given a hash' do
+      it 'converts the hash to JSON and stores it as data' do
+        json_hash   = { name: 'Bob', age: 30 }
+        json_string = json_hash.to_json
+        extractor   = JsonDataExtractor.new(json_hash)
+        expect(extractor.data).to eq(json_string)
+      end
+    end
+
+    context 'when given modifiers' do
+      it 'stores the modifiers as a hash' do
+        modifiers = { upcase: ->(s) { s.upcase } }
+        extractor = JsonDataExtractor.new('{}', modifiers)
+        expect(extractor.modifiers).to eq(modifiers)
+      end
+
+    end
+  end
+
+  describe '#add_modifier' do
+    it 'adds a new modifier to the modifiers hash' do
+      extractor = JsonDataExtractor.new('{}')
+      modifier  = ->(n) { n + 1 }
+      extractor.add_modifier(:increment, &modifier)
+      expect(extractor.modifiers).to eq({ increment: modifier })
+    end
+
+    it 'converts the modifier name to a symbol' do
+      extractor = JsonDataExtractor.new('{}')
+      modifier  = ->(n) { n + 1 }
+      extractor.add_modifier('increment', &modifier)
+      expect(extractor.modifiers).to eq({ increment: modifier })
     end
   end
 end

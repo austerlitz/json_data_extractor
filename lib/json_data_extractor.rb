@@ -37,20 +37,17 @@ class JsonDataExtractor
       else
         results[key] = apply_modifiers(extracted_data, modifiers)
 
-        # TODO yeah, this looks ugly. Address it later.
-        if !array_type
-          if nested
-            results[key] = self.class.new(results[key].first, @modifiers).extract(nested)
-            # todo there might be a problem if results[key] yields more than 1 item
-            # Yeah, we'll get back to it later. Or send your PRs
-          else
-            results[key] = results[key].first unless 1 < results[key].size
-          end
-        elsif nested
-          results[key] = []
-          Array(extracted_data).each do |item|
-            results[key] << self.class.new(item, @modifiers).extract(nested)
-          end
+        if array_type && nested
+          results[key] = extract_nested_data(results[key], nested)
+        elsif !array_type && nested
+          results[key] = extract_nested_data(results[key], nested).first
+        elsif !array_type && 1 < results[key].size
+          # TODO: handle case where results[key] has more than one item
+          # do nothing for now
+        elsif array_type && !nested
+          # do nothing, it is already an array
+        else
+          results[key] = results[key].first
         end
       end
     end
@@ -58,6 +55,12 @@ class JsonDataExtractor
   end
 
   private
+
+  def extract_nested_data(data, schema)
+    Array(data).map do |item|
+      self.class.new(item, modifiers).extract(schema)
+    end
+  end
 
   def apply_modifiers(data, modifiers)
     data.map do |value|
