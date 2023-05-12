@@ -202,7 +202,7 @@ RSpec.describe JsonDataExtractor do
 
       subject.add_modifier(:append) { |value| value + '...' }
       ap subject.extract(schema)
-      json = {"langs":[{"skills":["Ruby...","JavaScript..."]},{"skills":["Python...","SQL..."]}]}
+      json = { "langs": [{ "skills": ["Ruby...", "JavaScript..."] }, { "skills": ["Python...", "SQL..."] }] }
       expect(subject.extract(schema)).to eq(json)
     end
     context 'nested modifiers for non-array type' do
@@ -276,6 +276,116 @@ RSpec.describe JsonDataExtractor do
       modifier  = ->(n) { n + 1 }
       extractor.add_modifier('increment', &modifier)
       expect(extractor.modifiers).to eq({ increment: modifier })
+    end
+  end
+
+  describe 'modifiers as lambdas' do
+    let(:json_data) do
+      <<~JSON
+        {
+          "name": "John",
+          "age": 30,
+          "address": {
+            "street": "123 Main St",
+            "city": "Anytown",
+            "state": "CA",
+            "zip": "12345"
+          },
+          "friends": [
+            {
+              "name": "Jane",
+              "age": 28,
+              "address": {
+                "street": "456 Oak St",
+                "city": "Othertown",
+                "state": "CA",
+                "zip": "67890"
+              },
+              "hobbies": [
+                {
+                  "name": "Hiking",
+                  "years": 10
+                },
+                {
+                  "name": "Swimming",
+                  "years": 5
+                }
+              ]
+            },
+            {
+              "name": "Bob",
+              "age": 35,
+              "address": {
+                "street": "789 Pine St",
+                "city": "Somewhere",
+                "state": "CA",
+                "zip": "55555"
+              },
+              "hobbies": [
+                {
+                  "name": "Reading",
+                  "years": 15
+                },
+                {
+                  "name": "Writing",
+                  "years": 20
+                }
+              ]
+            }
+          ]
+        }
+      JSON
+    end
+
+    describe '#extract' do
+      let(:extractor) { described_class.new(json_data) }
+
+      context 'with schema that includes anonymous lambda as modifier' do
+        let(:schema) do
+          {
+            name:    '$.name',
+            friends: {
+              path:   '$.friends[*]',
+              type:   'array',
+              schema: {
+                name:           '$.name',
+                hobbies:        {
+                  path:   '$.hobbies[*]',
+                  type:   'array',
+                  schema: {
+                    name:  '$.name',
+                    years: {
+                      path:      '$.years',
+                      modifier: ->(val) { (val * 2).to_s }
+                    }
+                  }
+                },
+                address:        {
+                  path:   '$.address',
+                  schema: {
+                    street:    '$.street',
+                    city:      '$.city',
+                    state:     '$.state',
+                    zip:       '$.zip',
+                    formatted: {
+                      path:      '$.',
+                      modifiers: [->(address) { "#{address['street']}, #{address['city']}, #{address['state']} #{address['zip']}" }, :upcase]
+                    }
+                  }
+                },
+                formatted_info: {
+                  path:      '$.',
+                  type:      'array',
+                  modifiers: ->(friend) { "#{friend['name']} (#{friend['age']}) - Hobbies: #{friend['hobbies'].map { |h| h['name'] }.join(', ')}" }
+                }
+              }
+            }
+          }
+        end
+        it do
+          ap extractor.extract(schema)
+        end
+      end
     end
   end
 end

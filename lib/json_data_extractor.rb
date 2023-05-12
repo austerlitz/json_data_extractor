@@ -22,7 +22,16 @@ class JsonDataExtractor
       if val.is_a?(Hash)
         val.transform_keys!(&:to_sym)
         path       = val[:path]
-        modifiers  = Array(val[:modifiers] || val[:modifier]).map(&:to_sym)
+        modifiers  = Array(val[:modifiers] || val[:modifier]).map do |mod|
+          case mod
+          when Symbol, Proc
+            mod
+          when String
+            mod.to_sym
+          else
+            raise ArgumentError, "Invalid modifier: #{mod.inspect}"
+          end
+        end
         array_type = 'array' == val[:type]
         nested     = val.dup.delete(:schema)
       else

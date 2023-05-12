@@ -3,13 +3,15 @@
 NOTE: This is still a very early beta.
 
 Transform JSON data structures with the help of a simple schema and JsonPath expressions.
-Use the JsonDataExtractor gem to extract and modify data from complex JSON structures using a straightforward syntax
+Use the JsonDataExtractor gem to extract and modify data from complex JSON structures using a
+straightforward syntax
 and a range of built-in or custom modifiers.
 
 _Another try to make something for JSON that is XSLT for XML.
 We transform one JSON into another JSON with the help of a third JSON!!!111!!eleventy!!_
 
-Remap one JSON structure into another with some basic rules and [jsonpath](https://github.com/joshbuddy/jsonpath).
+Remap one JSON structure into another with some basic rules
+and [jsonpath](https://github.com/joshbuddy/jsonpath).
 
 Heavily inspired by [xml_data_extractor](https://github.com/monde-sistemas/xml_data_extractor).
 
@@ -32,8 +34,8 @@ Or install it yourself as:
 ## Usage
 
 JsonDataExtractor allows you to remap one JSON structure into another with some basic rules
-and [JSONPath](https://goessner.net/articles/JsonPath/) expressions. The process involves defining a schema that maps
-the input JSON structure to the desired output structure.
+and [JSONPath](https://goessner.net/articles/JsonPath/) expressions. The process involves defining a
+schema that maps the input JSON structure to the desired output structure.
 
 We'll base our examples on the following source:
 
@@ -78,15 +80,15 @@ We'll base our examples on the following source:
 
 ### Defining a Schema
 
-A schema consists of one or more mappings that specify how to extract data from the input JSON and where to place it in
-the output JSON.
+A schema consists of one or more mappings that specify how to extract data from the input JSON and
+where to place it in the output JSON.
 
-Each mapping has a path field that specifies the JsonPath expression to use for data extraction, and an optional
-modifier field that specifies one or more modifiers to apply to the extracted data. Modifiers are used to transform the
-data in some way before placing it in the output JSON.
+Each mapping has a path field that specifies the JsonPath expression to use for data extraction, and
+an optional modifier field that specifies one or more modifiers to apply to the extracted data.
+Modifiers are used to transform the data in some way before placing it in the output JSON.
 
-Here's an example schema that extracts the authors and categories from a JSON structure similar to the one used in the
-previous example (here it's in YAML just for readability):
+Here's an example schema that extracts the authors and categories from a JSON structure similar to
+the one used in the previous example (here it's in YAML just for readability):
 
 ```yaml
 schemas:
@@ -116,23 +118,66 @@ The resulting json will be:
 
 ```
 
-Modifiers can be supplied on object creation and/or added later by calling `#add_modifier` method. Please see specs for
-examples.
+### Modifiers
+
+Modifiers can be supplied on object creation and/or added later by calling `#add_modifier` method.
+Please see specs for examples.
+Modifiers allow you to perform transformations on the extracted data before it is returned. You can
+use modifiers to clean up the data, format it, or apply any custom logic you need.
+
+Modifiers can be defined in two ways: by providing a symbol corresponding to the name of the method
+or lambda that should be called on each extracted value, or by providing an anonymous lambda. Here's
+an example schema that uses both types of modifiers:
+
+```ruby
+schema = {
+  name:  '$.name',
+  age:   { path: '$.age', modifier: :to_i },
+  email: { path: '$.contact.email', modifiers: [:downcase, lambda { |email| email.gsub(/\s/, '') }] }
+}
+
+```
+
+In this schema, the name value is simply extracted as-is. The age value is extracted from the JSON,
+but it is modified with the `to_i` method, which converts the value to an integer. The email value
+is extracted from a nested object, and then passed through two modifiers: first `downcase` is called
+to convert the email address to all lowercase letters, and then an anonymous lambda is called to
+remove any whitespace in the email address.
+
+You can also define custom modifiers by passing a lambda to the `add_modifier` method on a
+JsonDataExtractor instance:
+
+```ruby
+extractor = JsonDataExtractor.new(json_data)
+extractor.add_modifier(:remove_newlines) { |value| value.gsub("\n", '') }
+
+schema = {
+  name: 'name',
+  bio:  { path: 'bio', modifiers: [:remove_newlines] }
+}
+
+results = extractor.extract(schema)
+
+```
+
+Modifiers are called in the order in which they are defined, so keep that in mind when defining your
+schema.
 
 ### Nested schemas
 
-JDE supports nested schemas. Just provide your element with a type of `array` and add a `schema` key for its data.
+JDE supports nested schemas. Just provide your element with a type of `array` and add a `schema` key
+for its data.
 
 E.g. this is a valid real-life schema with nested data:
 
 ```json
 {
-  "name":      "$.Name",
-  "code":      "$.Code",
-  "services":  "$.Services[*].Code",
+  "name": "$.Name",
+  "code": "$.Code",
+  "services": "$.Services[*].Code",
   "locations": {
-    "path":   "$.Locations[*]",
-    "type":   "array",
+    "path": "$.Locations[*]",
+    "type": "array",
     "schema": {
       "name": "$.Name",
       "type": "$.Type",
@@ -148,25 +193,32 @@ Update this readme for better usage cases. Add info on arrays and modifiers.
 
 ## Development
 
-After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the tests. You can
+After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run
+the tests. You can
 also run `bin/console` for an interactive prompt that will allow you to experiment.
 
-To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the
-version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version,
+To install this gem onto your local machine, run `bundle exec rake install`. To release a new
+version, update the
+version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag
+for the version,
 push git commits and tags, and push the `.gem` file to [rubygems.org](https://rubygems.org).
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/austerlitz/json_data_extractor. This project
-is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to
+Bug reports and pull requests are welcome on GitHub
+at https://github.com/austerlitz/json_data_extractor. This project
+is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere
+to
 the [Contributor Covenant](http://contributor-covenant.org) code of conduct.
 
 ## License
 
-The gem is available as open source under the terms of the [MIT License](https://opensource.org/licenses/MIT).
+The gem is available as open source under the terms of
+the [MIT License](https://opensource.org/licenses/MIT).
 
 ## Code of Conduct
 
-Everyone interacting in the JsonDataExtractor project’s codebases, issue trackers, chat rooms and mailing lists is
+Everyone interacting in the JsonDataExtractor project’s codebases, issue trackers, chat rooms and
+mailing lists is
 expected to follow
 the [code of conduct](https://github.com/austerlitz/json_data_extractor/blob/master/CODE_OF_CONDUCT.md).
