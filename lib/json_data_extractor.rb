@@ -1,4 +1,5 @@
 require 'src/version'
+require 'src/configuration'
 require 'jsonpath'
 
 class JsonDataExtractor
@@ -88,9 +89,21 @@ class JsonDataExtractor
       modifiers[modifier].call(value)
     elsif value.respond_to?(modifier)
       value.send(modifier)
-    else
+    elsif self.class.configuration.strict_modifiers
       raise ArgumentError, "Invalid modifier: :#{modifier}"
+    else
       value
+    end
+  end
+
+
+  class << self
+    def configuration
+      @configuration ||= Configuration.new
+    end
+
+    def configure
+      yield(configuration)
     end
   end
 end

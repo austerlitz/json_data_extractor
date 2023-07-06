@@ -402,8 +402,22 @@ RSpec.describe JsonDataExtractor do
           YAML
         end
         let(:expected_result) { { 'name' => 'john' } }
-        it 'raises an ArgumentError' do
-          expect{subject}.to raise_error ArgumentError
+
+        context 'with .strict_modifiers set by default to true' do
+          it 'raises an ArgumentError' do
+            expect { subject }.to raise_error ArgumentError
+          end
+        end
+
+        context 'with .strict_modifiers set to false' do
+          before do
+            JsonDataExtractor.configure do |config|
+              config.strict_modifiers = false
+            end
+          end
+          it 'passes value unmodified' do
+            expect(subject['name']).to eq 'John'
+          end
         end
       end
     end
