@@ -89,6 +89,7 @@ class JsonDataExtractor
     elsif value.respond_to?(modifier)
       value.send(modifier)
     else
+      raise ArgumentError, "Invalid modifier: :#{modifier}"
       value
     end
   end

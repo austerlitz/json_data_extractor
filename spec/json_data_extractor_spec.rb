@@ -285,6 +285,7 @@ RSpec.describe JsonDataExtractor do
         {
           "name": "John",
           "age": 30,
+          "is_active": true,
           "address": {
             "street": "123 Main St",
             "city": "Anytown",
@@ -295,6 +296,7 @@ RSpec.describe JsonDataExtractor do
             {
               "name": "Jane",
               "age": 28,
+              "is_active": false,
               "address": {
                 "street": "456 Oak St",
                 "city": "Othertown",
@@ -315,6 +317,7 @@ RSpec.describe JsonDataExtractor do
             {
               "name": "Bob",
               "age": 35,
+              "is_active": true,
               "address": {
                 "street": "789 Pine St",
                 "city": "Somewhere",
@@ -355,7 +358,7 @@ RSpec.describe JsonDataExtractor do
                   schema: {
                     name:  '$.name',
                     years: {
-                      path:      '$.years',
+                      path:     '$.years',
                       modifier: ->(val) { (val * 2).to_s }
                     }
                   }
@@ -384,6 +387,23 @@ RSpec.describe JsonDataExtractor do
         end
         it do
           ap extractor.extract(schema)
+        end
+      end
+
+      context 'when trying to call an absent modifier' do
+        let(:json) {
+          { name: 'John', email: 'doe@example.org' }
+        }
+        let(:yml) do
+          <<~YAML
+            name: 
+              path: $.name
+              modifier: invalid_modifier
+          YAML
+        end
+        let(:expected_result) { { 'name' => 'john' } }
+        it 'raises an ArgumentError' do
+          expect{subject}.to raise_error ArgumentError
         end
       end
     end
