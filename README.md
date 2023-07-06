@@ -88,14 +88,16 @@ an optional modifier field that specifies one or more modifiers to apply to the 
 Modifiers are used to transform the data in some way before placing it in the output JSON.
 
 Here's an example schema that extracts the authors and categories from a JSON structure similar to
-the one used in the previous example (here it's in YAML just for readability):
+the one used in the previous example:
 
-```yaml
-schemas:
-  authors:
-    path: $.store.book[*].author
-    modifier: downcase
-  categories: $..category
+```json
+{
+  "authors": {
+    "path": "$.store.book[*].author",
+    "modifier": "downcase"
+  },
+  "categories": "$..category"
+}
 ```
 
 The resulting json will be:
@@ -161,7 +163,8 @@ results = extractor.extract(schema)
 ```
 
 Modifiers are called in the order in which they are defined, so keep that in mind when defining your
-schema.
+schema. By default JDE raises an ArgumentError if a modifier is not applicable, but this behaviour 
+can be configured to ignore missing modifiers. See Configuration options for details
 
 ### Nested schemas
 
@@ -186,6 +189,26 @@ E.g. this is a valid real-life schema with nested data:
   }
 }
 ```
+Nested schema can be also applied to objects, not arrays. See specs for more examples.
+
+## Configuration Options
+The JsonDataExtractor gem provides a configuration option to control the behavior when encountering invalid modifiers.
+
+### Strict Modifiers
+By default, the gem operates in strict mode, which means that if an invalid modifier is encountered, an `ArgumentError` will be raised. This ensures that only valid modifiers are applied to the extracted data.
+
+To change this behavior and allow the use of invalid modifiers without raising an error, you can configure the gem to operate in non-strict mode.
+
+```ruby
+JsonDataExtractor.configure do |config|
+  config.strict_modifiers = false
+end
+```
+When `strict_modifiers` is set to `false`, any invalid modifiers will be ignored, and the original value will be returned without applying any modification.
+
+It is important to note that enabling non-strict mode should be done with caution, as it can lead to unexpected behavior if there are typos or incorrect modifiers specified in the schema.
+
+By default, `strict_modifiers` is set to `true`, providing a safe and strict behavior. However, you can customize this configuration option according to your specific needs.
 
 ## TODO
 
