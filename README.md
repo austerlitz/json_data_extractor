@@ -163,8 +163,90 @@ results = extractor.extract(schema)
 ```
 
 Modifiers are called in the order in which they are defined, so keep that in mind when defining your
-schema. By default JDE raises an ArgumentError if a modifier is not applicable, but this behaviour 
+schema. By default JDE raises an ArgumentError if a modifier is not applicable, but this behaviour
 can be configured to ignore missing modifiers. See Configuration options for details
+
+### Maps
+
+The JsonDataExtractor gem provides a powerful feature called "maps" that allows you to transform
+extracted data using predefined mappings. Maps are useful when you want to convert specific values
+from the source data into different values based on predefined rules. The best use case is when you
+need to traverse a complex tree to get to a value and them just convert it to your own disctionary.
+E.g.:
+
+```ruby
+data = {
+  cars: [
+          { make: 'A', fuel: 1 },
+          { make: 'B', fuel: 2 },
+          { make: 'C', fuel: 3 },
+          { make: 'D', fuel: nil },
+        ]
+}
+
+FUEL_TYPES = { 1 => 'Petrol', 2 => 'Diesel', nil => 'Unknown' }
+schema     = {
+  fuel: {
+    path: '$.cars[*].fuel',
+    map:  FUEL_TYPES
+  }
+}
+result     = described_class.new(data).extract(schema) # => {"fuel":["Petrol","Diesel",nil,"Unknown"]}
+```
+
+A map is essentially a dictionary that defines key-value pairs, where the keys represent the source
+values and the corresponding values represent the transformed values. When extracting data, you can
+apply one or multiple maps to modify the extracted values.
+
+#### Syntax
+
+To define a map, you can use the `map` or `maps` key in the schema. The map value can be a single
+hash or an array of hashes, where each hash represents a separate mapping rule. Here's an example:
+
+```ruby
+{
+  path: "$.data[*].category",
+  map:  {
+    "fruit"     => "Fresh Fruit",
+    "vegetable" => "Organic Vegetable",
+    "meat"      => "Premium Meat"
+  },
+}
+```
+
+Multiple maps can also be provided. In this case, each map is applied to the result of previous
+transformation:
+
+```ruby
+{
+  path: "$.data[*].category",
+  maps: [
+          {
+            "fruit"     => "Fresh Fruit",
+            "vegetable" => "Organic Vegetable",
+            "meat"      => "Premium Meat",
+          },
+          {
+            "Fresh Fruit"       => "Frisches Obst",
+            "Organic Vegetable" => "Biologisches Gemüse",
+            "Premium Meat"      => "Hochwertiges Fleisch",
+          }
+        ]
+}
+```
+
+_(the example is a little bit silly, but you should get the idea of chaining maps)_
+
+You can use keys `:map` and `:maps` interchangeably much like `:modifier`, `:modifiers`.
+
+#### Notes
+
+- Maps can be used together with modifiers but this has less sense as you can always apply complex
+  mapping rules in modifiers themselves.
+- If used together with modifiers, maps are applied **after** modifiers.
+- If a map does not have a key corresponding to a transformed value, it will return nil, be careful
+- Maps are applied in the order they are defined in the schema. Be cautious of the order if you have
+  overlapping or conflicting mapping rules.
 
 ### Nested schemas
 
@@ -189,26 +271,37 @@ E.g. this is a valid real-life schema with nested data:
   }
 }
 ```
+
 Nested schema can be also applied to objects, not arrays. See specs for more examples.
 
 ## Configuration Options
-The JsonDataExtractor gem provides a configuration option to control the behavior when encountering invalid modifiers.
+
+The JsonDataExtractor gem provides a configuration option to control the behavior when encountering
+invalid modifiers.
 
 ### Strict Modifiers
-By default, the gem operates in strict mode, which means that if an invalid modifier is encountered, an `ArgumentError` will be raised. This ensures that only valid modifiers are applied to the extracted data.
 
-To change this behavior and allow the use of invalid modifiers without raising an error, you can configure the gem to operate in non-strict mode.
+By default, the gem operates in strict mode, which means that if an invalid modifier is encountered,
+an `ArgumentError` will be raised. This ensures that only valid modifiers are applied to the
+extracted data.
+
+To change this behavior and allow the use of invalid modifiers without raising an error, you can
+configure the gem to operate in non-strict mode.
 
 ```ruby
 JsonDataExtractor.configure do |config|
   config.strict_modifiers = false
 end
 ```
-When `strict_modifiers` is set to `false`, any invalid modifiers will be ignored, and the original value will be returned without applying any modification.
 
-It is important to note that enabling non-strict mode should be done with caution, as it can lead to unexpected behavior if there are typos or incorrect modifiers specified in the schema.
+When `strict_modifiers` is set to `false`, any invalid modifiers will be ignored, and the original
+value will be returned without applying any modification.
 
-By default, `strict_modifiers` is set to `true`, providing a safe and strict behavior. However, you can customize this configuration option according to your specific needs.
+It is important to note that enabling non-strict mode should be done with caution, as it can lead to
+unexpected behavior if there are typos or incorrect modifiers specified in the schema.
+
+By default, `strict_modifiers` is set to `true`, providing a safe and strict behavior. However, you
+can customize this configuration option according to your specific needs.
 
 ## TODO
 
