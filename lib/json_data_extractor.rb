@@ -23,6 +23,13 @@ class JsonDataExtractor
       if val.is_a?(Hash)
         val.transform_keys!(&:to_sym)
         path       = val[:path]
+        maps       = Array([val[:maps] || val[:map]]).flatten.compact.map do |map|
+          if map.is_a?(Hash)
+            map
+          else
+            raise ArgumentError, "Invalid map: #{map.inspect}"
+          end
+        end
         modifiers  = Array(val[:modifiers] || val[:modifier]).map do |mod|
           case mod
           when Symbol, Proc
@@ -38,6 +45,7 @@ class JsonDataExtractor
       else
         path      = val
         modifiers = []
+        maps      = []
       end
 
       extracted_data = JsonPath.on(@data, path)
@@ -45,7 +53,8 @@ class JsonDataExtractor
       if extracted_data.empty?
         results[key] = nil
       else
-        results[key] = apply_modifiers(extracted_data, modifiers)
+        transformed_data = apply_modifiers(extracted_data, modifiers)
+        results[key]     = apply_maps(transformed_data, maps)
 
         if array_type && nested
           results[key] = extract_nested_data(results[key], nested)
@@ -72,6 +81,14 @@ class JsonDataExtractor
     end
   end
 
+  def apply_maps(data, maps)
+    data.map do |value|
+      mapped_value = value
+      maps.each { |map| mapped_value = map[mapped_value] }
+      mapped_value
+    end
+  end
+
   def apply_modifiers(data, modifiers)
     data.map do |value|
       modified_value = value
@@ -95,7 +112,6 @@ class JsonDataExtractor
       value
     end
   end
-
 
   class << self
     def configuration

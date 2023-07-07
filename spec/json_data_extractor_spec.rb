@@ -422,4 +422,90 @@ RSpec.describe JsonDataExtractor do
       end
     end
   end
+
+  describe 'maps' do
+    let(:schema) do
+      {
+        categories: {
+          path: "$.store.book[*].category",
+          map:  { "fiction" => "Fiction", "reference" => "Reference" }
+        }
+      }
+    end
+    subject { described_class.new(json).extract(schema) }
+
+    it 'maps book categories to labels' do
+      expect(subject[:categories]).to eq(['Reference', 'Fiction', 'Fiction', 'Fiction'])
+    end
+
+    context 'another example' do
+      it 'does the job' do
+        data = {
+          cars: [
+                  {make: 'A', fuel: 1},
+                  {make: 'B', fuel: 2},
+                  {make: 'C', fuel: 3},
+                  {make: 'D', fuel: nil},
+                ]
+        }
+        FUEL_TYPES = { 1 => 'Petrol', 2 => 'Diesel', nil => 'Unknown'}
+        schema = {
+          fuel: {
+            path: '$.cars[*].fuel',
+            map: FUEL_TYPES
+          }
+        }
+        result = described_class.new(data).extract(schema)
+        expect(result).to eq({"fuel":["Petrol","Diesel",nil,"Unknown"]})
+      end
+    end
+  end
+
+  describe 'multiple maps' do
+    let(:json) do
+      [
+        {
+          "name":     "Apple",
+          "category": "fruit",
+          "price":    1.2
+        },
+        {
+          "name":     "Carrot",
+          "category": "vegetable",
+          "price":    0.5
+        },
+        {
+          "name":     "Chicken",
+          "category": "meat",
+          "price":    5.99
+        }
+      ]
+    end
+
+    let(:schema) do
+      {
+        "products": {
+          "path": "$..category",
+          "maps": [
+                    {
+                      "fruit"     => "Fresh Fruit",
+                      "vegetable" => "Organic Vegetable",
+                      "meat"      => "Premium Meat"
+                    },
+                    {
+                      'Fresh Fruit' => 'der Apfel',
+                    }
+                  ]
+        }
+      }
+    end
+
+    subject { described_class.new(json.to_json).extract(schema) }
+
+    it 'maps product categories and formats prices' do
+      ap subject
+      expect(subject[:products]).to eq(["der Apfel", nil, nil])
+    end
+  end
+
 end
