@@ -191,7 +191,7 @@ schema     = {
     map:  FUEL_TYPES
   }
 }
-result     = described_class.new(data).extract(schema) # => {"fuel":["Petrol","Diesel",nil,"Unknown"]}
+result     = JsonDataExtractor.new(data).extract(schema) # => {"fuel":["Petrol","Diesel",nil,"Unknown"]}
 ```
 
 A map is essentially a dictionary that defines key-value pairs, where the keys represent the source
