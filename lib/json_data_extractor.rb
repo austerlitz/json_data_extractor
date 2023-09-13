@@ -20,9 +20,11 @@ class JsonDataExtractor
   def extract(schema)
     results = {}
     schema.each do |key, val|
+      default_value = nil
       if val.is_a?(Hash)
         val.transform_keys!(&:to_sym)
         path       = val[:path]
+        default_value = val[:default]
         maps       = Array([val[:maps] || val[:map]]).flatten.compact.map do |map|
           if map.is_a?(Hash)
             map
@@ -48,11 +50,12 @@ class JsonDataExtractor
         maps      = []
       end
 
-      extracted_data = JsonPath.on(@data, path)
+      extracted_data = JsonPath.on(@data, path) if path
 
-      if extracted_data.empty?
-        results[key] = nil
+      if extracted_data.nil? || extracted_data.empty?
+        results[key] = default_value.is_a?(Proc) ? default_value.call : (default_value || nil)
       else
+        extracted_data.map! { |val| val.nil? ? default_value : val }
         transformed_data = apply_modifiers(extracted_data, modifiers)
         results[key]     = apply_maps(transformed_data, maps)
 

@@ -120,6 +120,35 @@ The resulting json will be:
 
 ```
 
+
+### Handling Default Values
+
+With JsonDataExtractor, you can specify default values in your schema for keys that might be absent in the input JSON. Use the `path` and `default` keys in the schema for this purpose.
+
+```ruby
+schema = {
+  absent_value: { path: nil },
+  default: { path: '$.some_real_path', default: 'foo' },
+  default_with_lambda: { path: '$.table', default: -> { 'DEFAULT' } },
+  absent_with_default: { path: nil, default: 'bar' }
+}
+```
+
+- `absent_value`: Will be `nil` in the output as there's no corresponding key in the input JSON and no default is provided.
+- `default`: Will either take the value from `$.some_real_path` in the input JSON or 'foo' if the path does not exist.
+- `default_with_lambda`: Will take the value from `$..table` in the input JSON or 'DEFAULT' if the path does not exist.
+- `absent_with_default`: Will be 'bar' in the output as there's no corresponding key in the input JSON but a default is provided.
+
+#### Simplified Syntax for Absent Values
+
+For keys that you expect to be absent in the input JSON but still want to include in the output with a `nil` value, you can use a simplified syntax by setting the schema value to `nil`.
+
+```ruby
+schema = {
+  absent_value: nil
+}
+```
+
 ### Modifiers
 
 Modifiers can be supplied on object creation and/or added later by calling `#add_modifier` method.

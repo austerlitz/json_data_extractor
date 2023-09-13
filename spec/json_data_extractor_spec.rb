@@ -508,4 +508,77 @@ RSpec.describe JsonDataExtractor do
     end
   end
 
+
+
+  context 'Default Value Handling' do
+    let(:input_data) do
+      {
+        "existing_key":         "existing_value",
+        "another_existing_key": "another_value",
+        "nested":               { "key": "nested_value" },
+        "array":                [1, 2, 3]
+      }
+
+    end
+    let(:extractor) { JsonDataExtractor.new(input_data) }
+
+    context 'when key is absent' do
+      let(:schema) { { absent_key: { path: nil, default: 'default_value' } } }
+
+      it 'uses the default value' do
+        result = extractor.extract(schema)
+        expect(result[:absent_key]).to eq('default_value')
+      end
+    end
+
+    context 'when key is absent without default' do
+      let(:schema) { { absent_key: { path: nil } } }
+
+      it 'includes the key in the output with a nil value' do
+        result = extractor.extract(schema)
+        expect(result).to have_key(:absent_key)
+        expect(result[:absent_key]).to be_nil
+      end
+    end
+
+    context 'when key is absent without default and the path is provided as nil' do
+      let(:schema) { { absent_key: nil } }
+
+      it 'includes the key in the output with a nil value' do
+        result = extractor.extract(schema)
+        expect(result).to have_key(:absent_key)
+        expect(result[:absent_key]).to be_nil
+      end
+    end
+
+    context 'when key is present with default' do
+      let(:schema) { { present_key: { path: '$.existing_key', default: 'default_value' } } }
+
+      it 'uses the actual value, not the default' do
+        result = extractor.extract(schema)
+        expect(result[:present_key]).to eq('existing_value')
+      end
+    end
+
+    context 'when default is a lambda function' do
+      let(:schema) { { dynamic_default: { path: nil, default: -> { 'dynamic_value' } } } }
+
+      it 'uses the dynamic default value' do
+        result = extractor.extract(schema)
+        expect(result[:dynamic_default]).to eq('dynamic_value')
+      end
+    end
+
+    context 'when path exists but value is nil' do
+      let(:input_data) { { 'some_real_path' => nil }.to_json }
+      let(:schema) { { default: { path: '$.some_real_path', default: 'foo' } } }
+
+      it 'uses the default value' do
+        result = extractor.extract(schema)
+        expect(result).to have_key(:default)
+        expect(result[:default]).to eq('foo')
+      end
+    end
+
+  end
 end
