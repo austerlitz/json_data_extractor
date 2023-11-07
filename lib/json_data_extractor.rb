@@ -110,7 +110,7 @@ class JsonDataExtractor
     elsif value.respond_to?(modifier)
       value.send(modifier)
     elsif self.class.configuration.strict_modifiers
-      raise ArgumentError, "Invalid modifier: :#{modifier}"
+      raise ArgumentError, "Modifier: <:#{modifier}> cannot be applied to value <#{value.inspect}>"
     else
       value
     end
