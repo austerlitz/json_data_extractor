@@ -1,5 +1,5 @@
-require 'src/version'
-require 'src/configuration'
+require 'json_data_extractor/version'
+require 'json_data_extractor/configuration'
 require 'jsonpath'
 
 class JsonDataExtractor
