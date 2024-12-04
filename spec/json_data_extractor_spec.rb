@@ -84,6 +84,33 @@ RSpec.describe JsonDataExtractor do
     end
   end
 
+  context 'uses class with a .call method' do
+
+    let(:yml) do
+      <<~YAML
+        authors: 
+          path: $.store.book[*].author
+          modifiers: [downcase, spaces_to_exclams]
+      YAML
+    end
+    let!(:expected_result) do
+      {
+        "authors" => ["nigel!rees", "evelyn!waugh", "herman!melville", "j.!r.!r.!tolkien"],
+      }
+    end
+    let (:callable) do
+      Class.new do
+        def self.call(item)
+          item.gsub(' ', '!')
+        end
+      end
+    end
+    subject { described_class.new(json, spaces_to_exclams: callable).extract(config) }
+    it 'uses any callable object' do
+      is_expected.to eq expected_result
+    end
+  end
+
   context 'returns scalars by default' do
     let(:yml) { 'first_item_price: $.store.book[0].price' }
     let(:expected_result) { { "first_item_price" => 8.95 } }

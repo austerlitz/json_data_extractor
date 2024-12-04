@@ -191,6 +191,8 @@ results = extractor.extract(schema)
 
 ```
 
+You can also define any class that implements a `call` method and use it as a modifier.
+
 Modifiers are called in the order in which they are defined, so keep that in mind when defining your
 schema. By default JDE raises an ArgumentError if a modifier is not applicable, but this behaviour
 can be configured to ignore missing modifiers. See Configuration options for details

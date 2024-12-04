@@ -103,7 +103,7 @@ class JsonDataExtractor
   end
 
   def apply_single_modifier(modifier, value)
-    if modifier.is_a?(Proc)
+    if modifier.respond_to?(:call) # Matches Proc, Lambda, Method, and callable objects
       modifier.call(value)
     elsif modifiers.key?(modifier)
       modifiers[modifier].call(value)
