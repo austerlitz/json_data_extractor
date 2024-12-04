@@ -64,19 +64,15 @@ class Extractor
 
   def apply_maps(data, maps)
     data.map do |value|
-      mapped_value = value
-      maps.each { |map| mapped_value = map[mapped_value] }
-      mapped_value
+      maps.reduce(value) { |mapped_value, map| map[mapped_value] }
     end
   end
 
   def apply_modifiers(data, modifiers)
     data.map do |value|
-      modified_value = value
-      modifiers.each do |modifier|
-        modified_value = apply_single_modifier(modifier, modified_value)
+      modifiers.reduce(value) do |modified_value, modifier|
+        apply_single_modifier(modifier, modified_value)
       end
-      modified_value
     end
   end
 
