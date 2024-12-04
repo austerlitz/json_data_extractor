@@ -35,23 +35,26 @@ class Extractor
       # apply maps if present
       results[key] = element.maps.any? ? apply_maps(extracted_data, element.maps) : extracted_data
 
-      if element.array_type && element.nested
-        results[key] = extract_nested_data(results[key], element.nested)
-      elsif !element.array_type && element.nested
-        results[key] = extract_nested_data(results[key], element.nested).first
-      elsif !element.array_type && 1 < results[key].size
-        # TODO: handle case where results[key] has more than one item
-        # do nothing for now
-      elsif element.array_type && !element.nested
-        # do nothing, it is already an array
-      else
-        results[key] = results[key].first
-      end
+      results[key] = resolve_result_structure(results[key], element)
     end
     results
   end
 
   private
+
+  def resolve_result_structure(result, element)
+    if element.nested
+      # Process nested data
+      result = extract_nested_data(result, element.nested)
+      return element.array_type ? result : result.first
+    end
+
+    # Handle single-item extraction if not explicitly an array type or having multiple items
+    return result.first if result.size == 1 && !element.array_type
+
+    # Default case: simply return the result, assuming it's correctly formed
+    result
+  end
 
   def extract_nested_data(data, schema)
     Array(data).map do |item|
