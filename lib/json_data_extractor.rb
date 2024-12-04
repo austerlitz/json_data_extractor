@@ -36,6 +36,12 @@ class JsonDataExtractor
           case mod
           when Symbol, Proc
             mod
+          when Class
+            if mod.respond_to?(:call)
+              mod
+            else
+              raise ArgumentError, "Modifier class must respond to call: #{mod.inspect}"
+            end
           when String
             mod.to_sym
           else
