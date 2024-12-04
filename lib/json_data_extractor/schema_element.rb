@@ -6,7 +6,7 @@ module JsonDataExtractor
       schema_definition.transform_keys!(&:to_sym)
       @path = schema_definition[:path]
       @default_value = schema_definition[:default]
-      @maps = fetch_maps([schema_definition[:maps] || schema_definition[:map]])
+      @maps = fetch_maps(schema_definition[:maps] || schema_definition[:map])
       @modifiers = fetch_modifiers(schema_definition[:modifiers] || schema_definition[:modifier])
       @array_type = 'array' == schema_definition[:type]
       @nested = schema_definition[:schema]
@@ -15,7 +15,7 @@ module JsonDataExtractor
     private
 
     def fetch_maps(map_value)
-      Array(map_value).flatten.compact.map do |map|
+      Array([map_value]).flatten.compact.map do |map|
         if map.is_a?(Hash)
           map
         else
