@@ -1,6 +1,6 @@
 lib = File.expand_path('../lib', __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
-require 'src/version'
+require 'json_data_extractor/version'
 
 Gem::Specification.new do |spec|
   spec.name    = 'json_data_extractor'
@@ -31,6 +31,7 @@ transformations. The schema is defined as a simple Ruby hash that maps keys to p
   spec.add_development_dependency 'rspec', '~> 3.0'
   spec.add_development_dependency 'pry'
   spec.add_development_dependency 'amazing_print'
+  spec.add_development_dependency 'rubocop'
 
   spec.add_dependency 'jsonpath'
 end
