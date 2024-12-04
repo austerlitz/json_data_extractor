@@ -8,7 +8,7 @@ module JsonDataExtractor
     def initialize(schema_definition)
       validate_schema_definition(schema_definition)
 
-      @path = schema_definition[:path] unless schema_definition[:path].nil?
+      @path = schema_definition[:path] if schema_definition.key?(:path)
       @default_value = schema_definition[:default]
       @maps = fetch_maps(schema_definition[:maps] || schema_definition[:map])
       @modifiers = fetch_modifiers(schema_definition[:modifiers] || schema_definition[:modifier])
