@@ -26,7 +26,8 @@ class Extractor
         next
       end
 
-      extracted_data.map! { |val| val.nil? ? element.default_value : val }
+      extracted_data.map! { |item| item.nil? ? element.fetch_default_value : item }
+
       transformed_data = apply_modifiers(extracted_data, element.modifiers)
       results[key]     = apply_maps(transformed_data, element.maps)
 
@@ -78,7 +79,7 @@ class Extractor
     elsif modifiers.key?(modifier)
       modifiers[modifier].call(value)
     elsif value.respond_to?(modifier)
-      value.send(modifier)
+      value.public_send(modifier)
     elsif JsonDataExtractor.configuration.strict_modifiers
       raise ArgumentError, "Modifier: <:#{modifier}> cannot be applied to value <#{value.inspect}>"
     else
