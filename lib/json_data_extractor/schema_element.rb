@@ -4,12 +4,12 @@ module JsonDataExtractor
 
     def initialize(schema_definition)
       schema_definition.transform_keys!(&:to_sym)
-      @path = schema_definition[:path]
+      @path          = schema_definition[:path]
       @default_value = schema_definition[:default]
-      @maps = fetch_maps(schema_definition[:maps] || schema_definition[:map])
-      @modifiers = fetch_modifiers(schema_definition[:modifiers] || schema_definition[:modifier])
-      @array_type = 'array' == schema_definition[:type]
-      @nested = schema_definition[:schema]
+      @maps          = fetch_maps(schema_definition[:maps] || schema_definition[:map])
+      @modifiers     = fetch_modifiers(schema_definition[:modifiers] || schema_definition[:modifier])
+      @array_type    = 'array' == schema_definition[:type]
+      @nested        = schema_definition[:schema]
     end
 
     private
@@ -29,6 +29,12 @@ module JsonDataExtractor
         case mod
         when Symbol, Proc
           mod
+        when Class
+          if mod.respond_to?(:call)
+            mod
+          else
+            raise ArgumentError, "Modifier class must respond to call: #{mod.inspect}"
+          end
         when String
           mod.to_sym
         else
