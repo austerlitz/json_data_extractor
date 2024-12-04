@@ -2,13 +2,13 @@ class Extractor
   attr_reader :data, :modifiers
 
   def initialize(json_data, modifiers = {})
-    @data      = json_data.is_a?(Hash) ? json_data.to_json : json_data # hopefully it's a string; maybe we'll add some validation here
+    @data = json_data.is_a?(Hash) ? json_data.to_json : json_data # hopefully it's a string; maybe we'll add some validation here
     @modifiers = modifiers.transform_keys(&:to_sym) # todo address this later
   end
 
   # @param modifier_name [String, Symbol]
   def add_modifier(modifier_name, &block)
-    modifier_name            = modifier_name.to_sym unless modifier_name.is_a?(Symbol)
+    modifier_name = modifier_name.to_sym unless modifier_name.is_a?(Symbol)
     modifiers[modifier_name] = block
   end
 
@@ -26,10 +26,14 @@ class Extractor
         next
       end
 
+      # check for nils and apply defaults if applicable
       extracted_data.map! { |item| item.nil? ? element.fetch_default_value : item }
 
-      transformed_data = apply_modifiers(extracted_data, element.modifiers)
-      results[key]     = apply_maps(transformed_data, element.maps)
+      # apply modifiers if present
+      extracted_data = apply_modifiers(extracted_data, element.modifiers) if element.modifiers.any?
+
+      # apply maps if present
+      results[key] = element.maps.any? ? apply_maps(extracted_data, element.maps) : extracted_data
 
       if element.array_type && element.nested
         results[key] = extract_nested_data(results[key], element.nested)
