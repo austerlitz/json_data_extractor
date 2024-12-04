@@ -5,8 +5,6 @@ require_relative 'json_data_extractor/extractor'
 require_relative 'json_data_extractor/schema_element'
 
 module JsonDataExtractor
-
-
   class << self
     # Backward compatibility
     def new(*args)
@@ -21,5 +19,4 @@ module JsonDataExtractor
       yield(configuration)
     end
   end
-
 end

@@ -17,57 +17,30 @@ class Extractor
     results = {}
     schema.each do |key, val|
       element = JsonDataExtractor::SchemaElement.new(val.is_a?(Hash) ? val : { path: val })
-      # default_value  = nil
-      # if val.is_a?(Hash)
-      #   val.transform_keys!(&:to_sym)
-      #   path          = val[:path]
-      #   default_value = val[:default]
-      #   maps          = Array([val[:maps] || val[:map]]).flatten.compact.map do |map|
-      #     if map.is_a?(Hash)
-      #       map
-      #     else
-      #       raise ArgumentError, "Invalid map: #{map.inspect}"
-      #     end
-      #   end
-      #   modifiers     = Array(val[:modifiers] || val[:modifier]).map do |mod|
-      #     case mod
-      #     when Symbol, Proc
-      #       mod
-      #     when String
-      #       mod.to_sym
-      #     else
-      #       raise ArgumentError, "Invalid modifier: #{mod.inspect}"
-      #     end
-      #   end
-      #   array_type    = 'array' == val[:type]
-      #   nested        = val.dup.delete(:schema)
-      # else
-      #   path      = val
-      #   modifiers = []
-      #   maps      = []
-      # end
 
       extracted_data = JsonPath.on(@data, element.path) if element.path
 
       if extracted_data.nil? || extracted_data.empty?
-        results[key] = element.default_value.is_a?(Proc) ? element.default_value.call : (element.default_value || nil)
-      else
-        extracted_data.map! { |val| val.nil? ? element.default_value : val }
-        transformed_data = apply_modifiers(extracted_data, element.modifiers)
-        results[key]     = apply_maps(transformed_data, element.maps)
+        # we either got nothing or the `path` was initially nil
+        results[key] = element.fetch_default_value
+        next
+      end
 
-        if element.array_type && element.nested
-          results[key] = extract_nested_data(results[key], element.nested)
-        elsif !element.array_type && element.nested
-          results[key] = extract_nested_data(results[key], element.nested).first
-        elsif !element.array_type && 1 < results[key].size
-          # TODO: handle case where results[key] has more than one item
-          # do nothing for now
-        elsif element.array_type && !element.nested
-          # do nothing, it is already an array
-        else
-          results[key] = results[key].first
-        end
+      extracted_data.map! { |val| val.nil? ? element.default_value : val }
+      transformed_data = apply_modifiers(extracted_data, element.modifiers)
+      results[key]     = apply_maps(transformed_data, element.maps)
+
+      if element.array_type && element.nested
+        results[key] = extract_nested_data(results[key], element.nested)
+      elsif !element.array_type && element.nested
+        results[key] = extract_nested_data(results[key], element.nested).first
+      elsif !element.array_type && 1 < results[key].size
+        # TODO: handle case where results[key] has more than one item
+        # do nothing for now
+      elsif element.array_type && !element.nested
+        # do nothing, it is already an array
+      else
+        results[key] = results[key].first
       end
     end
     results
