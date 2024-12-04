@@ -1,4 +1,4 @@
-class JsonDataExtractor
+module JsonDataExtractor
   class Configuration
     attr_accessor :strict_modifiers
 
