@@ -24,7 +24,6 @@ module JsonDataExtractor
 
     def validate_schema_definition(schema_definition)
       raise ArgumentError, 'Schema definition must be a Hash' unless schema_definition.is_a?(Hash)
-      raise ArgumentError, 'Schema definition must not be empty' if schema_definition.empty?
 
       schema_definition.transform_keys!(&:to_sym)
 
