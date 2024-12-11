@@ -146,54 +146,76 @@ schema = {
   absent_value: nil
 }
 ```
-
 ### Modifiers
 
-Modifiers can be supplied on object creation and/or added later by calling `#add_modifier` method.
-Please see specs for examples.
-Modifiers allow you to perform transformations on the extracted data before it is returned. You can
-use modifiers to clean up the data, format it, or apply any custom logic you need.
+Modifiers can be supplied on object creation and/or added later by calling the `#add_modifier` method. Modifiers allow you to perform transformations on the extracted data before it is returned. They are useful for cleaning up data, formatting it, or applying any custom logic.
 
-Modifiers can be defined in two ways: by providing a symbol corresponding to the name of the method
-or lambda that should be called on each extracted value, or by providing an anonymous lambda. Here's
-an example schema that uses both types of modifiers:
+Modifiers can now be defined in several ways:
+
+1. **By providing a symbol**: This symbol should correspond to the name of a method (e.g., `:to_i`) that will be called on each extracted value.
+2. **By providing an anonymous lambda or block**: Use a lambda or block to define the transformation logic inline.
+3. **By providing any callable object**: A class or object that implements a `call` method can be used as a modifier. This makes it flexible to use pre-defined classes, lambdas, or procs.
+
+Here’s an example schema showcasing the use of modifiers:
 
 ```ruby
 schema = {
-  name:  '$.name',
-  age:   { path: '$.age', modifier: :to_i },
-  email: { path: '$.contact.email', modifiers: [:downcase, lambda { |email| email.gsub(/\s/, '') }] }
+  name:  '$.name', # Extract as-is
+  age:   { path: '$.age', modifier: :to_i }, # Apply the `to_i` method
+  email: { 
+    path: '$.contact.email', 
+    modifiers: [ 
+      :downcase, 
+      ->(email) { email.gsub(/\s/, '') } # Lambda to remove whitespace
+    ]
+  }
 }
-
 ```
 
-In this schema, the name value is simply extracted as-is. The age value is extracted from the JSON,
-but it is modified with the `to_i` method, which converts the value to an integer. The email value
-is extracted from a nested object, and then passed through two modifiers: first `downcase` is called
-to convert the email address to all lowercase letters, and then an anonymous lambda is called to
-remove any whitespace in the email address.
+- **Name**: The value is simply extracted as-is.
+- **Age**: The extracted value is converted to an integer using the `to_i` method.
+- **Email**:
+  1. The value is transformed to lowercase using `downcase`.
+  2. Whitespace is removed using an anonymous lambda.
 
-You can also define custom modifiers by passing a lambda to the `add_modifier` method on a
-JsonDataExtractor instance:
+#### Defining Custom Modifiers
+
+You can define your own custom modifiers using `add_modifier`. A modifier can be defined using a block, a lambda, or any callable object (such as a class that implements `call`):
 
 ```ruby
+# Using a block
 extractor = JsonDataExtractor.new(json_data)
 extractor.add_modifier(:remove_newlines) { |value| value.gsub("\n", '') }
 
+# Using a class with a `call` method
+class ReverseString
+  def call(value)
+    value.reverse
+  end
+end
+
+extractor.add_modifier(:reverse_string, ReverseString.new)
+
+# Lambda example
+capitalize = ->(value) { value.capitalize }
+extractor.add_modifier(:capitalize, capitalize)
+
+# Apply these modifiers in a schema
 schema = {
   name: 'name',
-  bio:  { path: 'bio', modifiers: [:remove_newlines] }
+  bio:  { path: 'bio', modifiers: [:remove_newlines, :reverse_string] },
+  category: { path: 'category', modifier: :capitalize }
 }
 
+# Extract data
 results = extractor.extract(schema)
-
 ```
 
-You can also define any class that implements a `call` method and use it as a modifier.
+#### Modifier Order
 
-Modifiers are called in the order in which they are defined, so keep that in mind when defining your
-schema. By default JDE raises an ArgumentError if a modifier is not applicable, but this behaviour
-can be configured to ignore missing modifiers. See Configuration options for details
+Modifiers are called in the order in which they are defined. Keep this in mind when chaining multiple modifiers for complex transformations. For example, if you want to first format a string and then clean it up (or vice versa), define the order accordingly.
+
+You can also configure the behavior of modifiers. By default, JDE raises an `ArgumentError` if a modifier cannot be applied to the extracted value. However, this strict behavior can be configured to ignore such errors. See the **Configuration** section for more details.
 
 ### Maps
 

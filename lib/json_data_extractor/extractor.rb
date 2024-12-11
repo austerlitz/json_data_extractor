@@ -14,9 +14,14 @@ module JsonDataExtractor
     end
 
     # @param modifier_name [String, Symbol]
-    def add_modifier(modifier_name, &block)
+    # @param callable [#call, nil] Optional callable object
+    def add_modifier(modifier_name, callable = nil, &block)
       modifier_name = modifier_name.to_sym unless modifier_name.is_a?(Symbol)
-      modifiers[modifier_name] = block
+      modifiers[modifier_name] = callable || block
+
+      return if modifiers[modifier_name].respond_to?(:call)
+
+      raise ArgumentError, 'Modifier must be a callable object or a block'
     end
 
     # @param schema [Hash] schema of the expected data mapping
