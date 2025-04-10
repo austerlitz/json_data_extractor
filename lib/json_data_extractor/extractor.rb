@@ -8,9 +8,10 @@ module JsonDataExtractor
     # @param json_data [Hash,String]
     # @param modifiers [Hash]
     def initialize(json_data, modifiers = {})
-      @data = json_data.is_a?(Hash) ? json_data.to_json : json_data
+      @data = json_data.is_a?(Hash) ? Oj.dump(json_data, mode: :compat) : json_data
       @modifiers = modifiers.transform_keys(&:to_sym)
       @results = {}
+      @path_cache = {}
     end
 
     # @param modifier_name [String, Symbol]
@@ -29,7 +30,10 @@ module JsonDataExtractor
       schema.each do |key, val|
         element = JsonDataExtractor::SchemaElement.new(val.is_a?(Hash) ? val : { path: val })
 
-        extracted_data = JsonPath.on(@data, element.path) if element.path
+        path = element.path
+        json_path = path ? (@path_cache[path] ||= JsonPath.new(path)) : nil
+
+        extracted_data = json_path&.on(@data)
 
         if extracted_data.nil? || extracted_data.empty?
           # we either got nothing or the `path` was initially nil
