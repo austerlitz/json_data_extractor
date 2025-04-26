@@ -1,5 +1,7 @@
 # JsonDataExtractor
 
+[![Gem Version](https://badge.fury.io/rb/json_data_extractor.svg)](https://badge.fury.io/rb/json_data_extractor)
+
 Transform JSON data structures with the help of a simple schema and JsonPath expressions.
 Use the JsonDataExtractor gem to extract and modify data from complex JSON structures using a
 straightforward syntax
