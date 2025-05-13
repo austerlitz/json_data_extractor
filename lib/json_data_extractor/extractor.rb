@@ -3,7 +3,7 @@
 module JsonDataExtractor
   # does the main job of the gem
   class Extractor
-    attr_reader :data, :modifiers
+    attr_reader :data, :modifiers, :schema_cache
 
     # @param json_data [Hash,String]
     # @param modifiers [Hash]
@@ -12,6 +12,35 @@ module JsonDataExtractor
       @modifiers = modifiers.transform_keys(&:to_sym)
       @results = {}
       @path_cache = {}
+    end
+
+    # Creates a new extractor with a pre-processed schema
+    # @param schema [Hash] schema of the expected data mapping
+    # @param modifiers [Hash] modifiers to apply to the extracted data
+    # @return [Extractor] an extractor initialized with the schema
+    def self.with_schema(schema, modifiers = {})
+      extractor = new({}, modifiers)
+      extractor.instance_variable_set(:@schema_cache, SchemaCache.new(schema))
+      extractor
+    end
+
+    # Extracts data from the provided json_data using the cached schema
+    # @param json_data [Hash,String] the data to extract from
+    # @return [Hash] the extracted data
+    def extract_from(json_data)
+      # Ensure we have a schema cache
+      raise ArgumentError, 'No schema cache available. Use Extractor.with_schema first.' unless @schema_cache
+
+      # Reset results
+      @results = {}
+
+      # Update data
+      @data = json_data.is_a?(Hash) ? Oj.dump(json_data, mode: :compat) : json_data
+
+      # Extract data using cached schema
+      extract_using_cache
+
+      @results
     end
 
     # @param modifier_name [String, Symbol]
@@ -57,6 +86,36 @@ module JsonDataExtractor
     end
 
     private
+
+    # Extracts data using the cached schema
+    def extract_using_cache
+      schema_cache.schema.each do |key, _|
+        element = schema_cache.schema_elements[key]
+        path = element.path
+
+        # Use cached JsonPath object
+        json_path = path ? schema_cache.path_cache[path] : nil
+
+        extracted_data = json_path&.on(@data)
+
+        if extracted_data.nil? || extracted_data.empty?
+          # we either got nothing or the `path` was initially nil
+          @results[key] = element.fetch_default_value
+          next
+        end
+
+        # check for nils and apply defaults if applicable
+        extracted_data.map! { |item| item.nil? ? element.fetch_default_value : item }
+
+        # apply modifiers if present
+        extracted_data = apply_modifiers(extracted_data, element.modifiers) if element.modifiers.any?
+
+        # apply maps if present
+        @results[key] = element.maps.any? ? apply_maps(extracted_data, element.maps) : extracted_data
+
+        @results[key] = resolve_result_structure(@results[key], element)
+      end
+    end
 
     def resolve_result_structure(result, element)
       if element.nested

@@ -327,6 +327,117 @@ E.g. this is a valid real-life schema with nested data:
 
 Nested schema can be also applied to objects, not arrays. See specs for more examples.
 
+### Schema Reuse for Performance
+
+When processing multiple data objects with the same schema, JsonDataExtractor provides an optimized approach that avoids redundant schema processing. This is particularly useful for batch processing scenarios where you need to apply the same transformation to multiple data objects.
+
+#### Using `with_schema` and `extract_from`
+
+Instead of creating a new extractor for each data object:
+
+```ruby
+data_objects.map do |data|
+  extractor = JsonDataExtractor.new(data)
+  extractor.extract(schema)
+end
+```
+
+You can create a single extractor with a pre-processed schema and reuse it:
+```ruby
+extractor = JsonDataExtractor.with_schema(schema)
+data_objects.map do |data|
+  extractor.extract_from(data)
+end
+```
+
+This approach offers significant performance improvements for large datasets by:
+1. Pre-processing the schema only once
+2. Pre-compiling JsonPath objects
+3. Caching schema elements
+4. Avoiding redundant schema validation
+
+
+#### Comparison with Nested Schema Approach
+
+It's worth noting that similar functionality could be achieved using the existing nested schema approach when your data is already in an array format:
+
+```ruby
+# Process an array of locations with the nested schema approach
+locations_array = [location1, location2, location3]
+schema = { 
+  all_locations: { 
+    path: "[*]", 
+    type: "array", 
+    schema: { code: ".iataCode", city: ".city", name: ".name" } 
+  } 
+}
+result = JsonDataExtractor.new(locations_array).extract(schema)
+# Result: { all_locations: [{code: "...", city: "...", name: "..."}, {...}, {...}] }
+```
+
+**When to use which approach:**
+
+1. **Use nested schema when:**
+   - Your data is already structured as an array
+   - You want to preserve the array structure in your result
+   - You need to process the entire array at once
+
+2. **Use schema reuse when:**
+   - You receive data objects individually (e.g., from multiple API calls)
+   - You need to process each object separately
+   - You want to transform each object independently
+   - You need direct access to individual results without unwrapping them from an array
+
+The schema reuse approach is specifically optimized for scenarios where you process similar objects multiple times in sequence, rather than all at once in an array.
+
+
+#### Real-world Example
+Here's a practical example of extracting location data from multiple sources:
+```ruby
+# Location data from an API
+locations = [
+  {
+    "iataCode" => "JFK",
+    "countryCode" => "US",
+    "city" => "New York",
+    "name" => "John F. Kennedy International Airport"
+  },
+  {
+    "iataCode" => "LHR",
+    "countryCode" => "GB",
+    "city" => "London",
+    "name" => "Heathrow Airport"
+  }
+]
+
+# Define schema once
+schema = {
+  code: "$.iataCode",
+  city: "$.city",
+  name: "$.name",
+  country: "$.countryCode"
+}
+
+# Create an extractor with the schema
+jde = JsonDataExtractor.with_schema(schema)
+
+# Process each location efficiently
+processed_locations = locations.map do |data|
+  jde.extract_from(data)
+end
+
+# Result:
+# [
+#   {code: "JFK", city: "New York", name: "John F. Kennedy International Airport", country: "US"},
+#   {code: "LHR", city: "London", name: "Heathrow Airport", country: "GB"}
+# ]
+```
+This pattern is especially beneficial when:
+- Processing data in batches that arrive separately
+- Working with large datasets where you need to process one item at a time
+- Applying the same schema to multiple API responses
+- Parsing large collections of similar objects that aren't already in an array structure
+
 ## Configuration Options
 
 The JsonDataExtractor gem provides a configuration option to control the behavior when encountering
