@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module JsonDataExtractor
-  # does the main job of the gem
+  # Main extractor class - delegates to OptimizedExtractor when possible
   class Extractor
     attr_reader :data, :modifiers, :schema_cache
 
@@ -21,6 +21,7 @@ module JsonDataExtractor
     def self.with_schema(schema, modifiers = {})
       extractor = new({}, modifiers)
       extractor.instance_variable_set(:@schema_cache, SchemaCache.new(schema))
+      extractor.instance_variable_set(:@optimized_extractor, OptimizedExtractor.new(schema, modifiers: modifiers))
       extractor
     end
 
@@ -28,18 +29,17 @@ module JsonDataExtractor
     # @param json_data [Hash,String] the data to extract from
     # @return [Hash] the extracted data
     def extract_from(json_data)
-      # Ensure we have a schema cache
+      # Use optimised extractor if available
+      if @optimized_extractor
+        return @optimized_extractor.extract_from(json_data)
+      end
+
+      # Fallback to original implementation
       raise ArgumentError, 'No schema cache available. Use Extractor.with_schema first.' unless @schema_cache
 
-      # Reset results
       @results = {}
-
-      # Update data
       @data = json_data.is_a?(Hash) ? Oj.dump(json_data, mode: :compat) : json_data
-
-      # Extract data using cached schema
       extract_using_cache
-
       @results
     end
 
@@ -49,6 +49,9 @@ module JsonDataExtractor
       modifier_name = modifier_name.to_sym unless modifier_name.is_a?(Symbol)
       modifiers[modifier_name] = callable || block
 
+      # Also add to optimized extractor if present
+      @optimized_extractor&.add_modifier(modifier_name, callable, &block)
+
       return if modifiers[modifier_name].respond_to?(:call)
 
       raise ArgumentError, 'Modifier must be a callable object or a block'
@@ -56,61 +59,32 @@ module JsonDataExtractor
 
     # @param schema [Hash] schema of the expected data mapping
     def extract(schema)
-      schema.each do |key, val|
-        element = JsonDataExtractor::SchemaElement.new(val.is_a?(Hash) ? val : { path: val })
-
-        path = element.path
-        json_path = path ? (@path_cache[path] ||= JsonPath.new(path)) : nil
-
-        extracted_data = json_path&.on(@data)
-
-        if extracted_data.nil? || extracted_data.empty?
-          # we either got nothing or the `path` was initially nil
-          @results[key] = element.fetch_default_value
-          next
-        end
-
-        # check for nils and apply defaults if applicable
-        extracted_data.map! { |item| item.nil? ? element.fetch_default_value : item }
-
-        # apply modifiers if present
-        extracted_data = apply_modifiers(extracted_data, element.modifiers) if element.modifiers.any?
-
-        # apply maps if present
-        @results[key] = element.maps.any? ? apply_maps(extracted_data, element.maps) : extracted_data
-
-        @results[key] = resolve_result_structure(@results[key], element)
-      end
-
-      @results
+      # Use optimized path for direct extraction
+      optimized = OptimizedExtractor.new(schema, modifiers: @modifiers)
+      return optimized.extract_from(@data)
     end
 
     private
 
-    # Extracts data using the cached schema
+    # Legacy extraction method - kept for compatibility
     def extract_using_cache
       schema_cache.schema.each do |key, _|
         element = schema_cache.schema_elements[key]
         path = element.path
 
-        # Use cached JsonPath object
         json_path = path ? schema_cache.path_cache[path] : nil
 
         extracted_data = json_path&.on(@data)
 
         if extracted_data.nil? || extracted_data.empty?
-          # we either got nothing or the `path` was initially nil
           @results[key] = element.fetch_default_value
           next
         end
 
-        # check for nils and apply defaults if applicable
         extracted_data.map! { |item| item.nil? ? element.fetch_default_value : item }
 
-        # apply modifiers if present
         extracted_data = apply_modifiers(extracted_data, element.modifiers) if element.modifiers.any?
 
-        # apply maps if present
         @results[key] = element.maps.any? ? apply_maps(extracted_data, element.maps) : extracted_data
 
         @results[key] = resolve_result_structure(@results[key], element)
@@ -119,15 +93,12 @@ module JsonDataExtractor
 
     def resolve_result_structure(result, element)
       if element.nested
-        # Process nested data
         result = extract_nested_data(result, element.nested)
         return element.array_type ? result : result.first
       end
 
-      # Handle single-item extraction if not explicitly an array type or having multiple items
       return result.first if result.size == 1 && !element.array_type
 
-      # Default case: simply return the result, assuming it's correctly formed
       result
     end
 

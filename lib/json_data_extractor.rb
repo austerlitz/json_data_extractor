@@ -3,10 +3,16 @@
 require 'jsonpath'
 require 'multi_json'
 require 'oj'
+
 require_relative 'json_data_extractor/version'
 require_relative 'json_data_extractor/configuration'
 require_relative 'json_data_extractor/schema_element'
 require_relative 'json_data_extractor/schema_cache'
+require_relative 'json_data_extractor/direct_navigator'
+require_relative 'json_data_extractor/path_compiler'
+require_relative 'json_data_extractor/extraction_instruction'
+require_relative 'json_data_extractor/schema_analyzer'
+require_relative 'json_data_extractor/optimized_extractor'
 require_relative 'json_data_extractor/extractor'
 
 # Set MultiJson to use Oj for performance

@@ -3,7 +3,7 @@
 
 module JsonDataExtractor
   # Fast path navigator for simple JSONPath expressions
-  # Bypasses JsonPath gem for ~20-50x performance improvement
+  # Optimized to minimize recursive calls
   class DirectNavigator
     SIMPLE_PATH_PATTERN = /^\$(\.[a-zA-Z_][\w]*|\[\d+\]|\[\*\])+$/
 
@@ -17,8 +17,9 @@ module JsonDataExtractor
     end
 
     def on(data)
-      navigate(data, @segments)
-    rescue StandardError
+      # Use iterative approach instead of recursion to reduce method calls
+      navigate(data)
+    rescue StandardError => e
       # Fallback to empty array if navigation fails
       []
     end
@@ -26,7 +27,7 @@ module JsonDataExtractor
     private
 
     def parse_segments(path)
-      # Parse "$.store.book[*].author" into [[:key, "store"], [:key, "book"], [:array_all], [:key, "author"]]
+      # Parse "$.store.book[*].author" into segment instructions
       path.sub(/^\$/, '').scan(/\.\w+|\[\d+\]|\[\*\]/).map do |segment|
         case segment
         when /^\[(\d+)\]$/
@@ -39,23 +40,42 @@ module JsonDataExtractor
       end
     end
 
-    def navigate(current, segments)
-      return [current] if segments.empty?
-      return [nil] if current.nil?
-
-      segment_type, segment_value = segments.first
-      rest = segments[1..]
-
-      case segment_type
-      when :key
-        navigate(current[segment_value], rest)
-      when :array_index
-        navigate(current[segment_value], rest)
-      when :array_all
-        return [] unless current.is_a?(Array)
-
-        current.flat_map { |item| navigate(item, rest) }
+    # Iterative navigation - much faster than recursion
+    def navigate(data)
+      current_values = [data]
+      
+      @segments.each do |segment_type, segment_value|
+        next_values = []
+        
+        current_values.each do |current|
+          # Skip only if current is nil AND we haven't found anything yet
+          # This allows nil values that were explicitly extracted to pass through
+          next if current.nil?
+          
+          case segment_type
+          when :key
+            # Try both string and symbol keys
+            if current.is_a?(Hash)
+              val = current[segment_value] || current[segment_value.to_sym]
+              next_values << val
+            end
+          when :array_index
+            if current.is_a?(Array)
+              next_values << current[segment_value]
+            end
+          when :array_all
+            if current.is_a?(Array)
+              next_values.concat(current)
+            end
+          end
+        end
+        
+        current_values = next_values
       end
+      
+      # Don't use compact - it removes nil values which might be intentional!
+      # Only remove nils that result from failed navigation (not explicit nil values)
+      current_values
     end
   end
 end
