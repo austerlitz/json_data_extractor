@@ -41,12 +41,13 @@ RSpec.describe 'Performance Profiling', :profiling do
 
     puts "\n=== Profiling Optimized Extraction (1000 iterations) ==="
     
-    RubyProf.start
+    profile = RubyProf::Profile.new
+    profile.start
 
     extractor = JsonDataExtractor.with_schema(schema)
     1000.times { extractor.extract_from(data) }
 
-    result = RubyProf.stop
+    result = profile.stop
 
     # Print flat profile
     puts "\n--- Top Methods by Self Time ---"
@@ -60,15 +61,17 @@ RSpec.describe 'Performance Profiling', :profiling do
     puts "\n=== Comparing Optimized vs Standard (500 iterations each) ==="
 
     # Profile optimized
-    RubyProf.start
+    optimized_profile = RubyProf::Profile.new
+    optimized_profile.start
     extractor = JsonDataExtractor.with_schema(schema)
     500.times { extractor.extract_from(data) }
-    optimized_result = RubyProf.stop
+    optimized_result = optimized_profile.stop
 
     # Profile standard
-    RubyProf.start
+    standard_profile = RubyProf::Profile.new
+    standard_profile.start
     500.times { JsonDataExtractor.new(data).extract(schema) }
-    standard_result = RubyProf.stop
+    standard_result = standard_profile.stop
 
     puts "\n--- OPTIMIZED (with_schema) ---"
     RubyProf::FlatPrinter.new(optimized_result).print(STDOUT, min_percent: 2)

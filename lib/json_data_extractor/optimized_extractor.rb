@@ -9,7 +9,6 @@ module JsonDataExtractor
 
     def initialize(schema, modifiers: {})
       @modifiers = modifiers.transform_keys(&:to_sym)
-      @path_compiler = PathCompiler.new
       @schema_analyzer = SchemaAnalyzer.new(schema, @modifiers)
     end
 
@@ -41,13 +40,13 @@ module JsonDataExtractor
 
     def extract_and_fill(data, instruction, result)
       element = instruction.element
-      
+
       # Navigate and extract using compiled_path (not navigator)
       extracted_data = if instruction.compiled_path
-                        instruction.compiled_path.on(data)
-                      else
-                        []
-                      end
+                         instruction.compiled_path.on(data)
+                       else
+                         []
+                       end
 
       # Handle empty/nil results
       if extracted_data.nil? || extracted_data.empty?
